@@ -1,9 +1,6 @@
 {
-    "name": "fcc-boilerplate-infosec-mongo",
+    "name": "fcc-board",
     "version": 2,
-    "env": {
-        "ATLAS_URI": "@boilerplate-atlas-uri"
-    },
     "builds": [
         { "src": "server/index.js", "use": "@now/node-server" },
         {
@@ -21,7 +18,10 @@
         {
             "src": "/",
             "headers": {
-                "cache-control": "s-maxage=0"
+                "cache-control": "s-maxage=0",
+                "X-DNS-Prefetch-Control": "off",
+                "X-Frame-Options": "sameorigin",
+                "Referrer-Policy": "same-origin"
             },
             "dest": "/client/index.html"
         },
