@@ -1,43 +1,40 @@
 const threadSchema = {
+    board: {
+        type: String,
+        required: true,
+    },
     text: {
         type: String,
         required: true,
     },
-    reported: Boolean,
+    reported: {
+        type: Boolean,
+        default: false,
+    },
     delete_password: {
         type: String,
         required: true,
     },
     replies: [
         {
-            // text: String,
+            text: {
+                type: String,
+                required: true,
+            },
+            created_on: {
+                type: Date,
+                default: Date.now,
+            },
+            delete_password: {
+                type: String,
+                required: true,
+            },
+            reported: {
+                type: Boolean,
+                default: false,
+            },
         },
     ],
-
-    // issue_text: {
-    //     type: String,
-    //     required: true,
-    // },
-    // created_by: {
-    //     type: String,
-    //     required: true,
-    // },
-    // assigned_to: {
-    //     type: String,
-    //     required: false,
-    // },
-    // status_text: {
-    //     type: String,
-    //     required: false,
-    // },
-    // open: {
-    //     type: Boolean,
-    //     required: true,
-    // },
-    // projectname: {
-    //     type: String,
-    //     required: true,
-    // },
 };
 
 module.exports = threadSchema;

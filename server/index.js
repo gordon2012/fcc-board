@@ -3,6 +3,7 @@ const cors = require('cors');
 
 const connect = require('./connect');
 const exampleSchema = require('./models/example');
+const threadSchema = require('./models/thread');
 
 const app = express();
 const origin =
@@ -12,35 +13,135 @@ const origin =
 app.use(cors({ origin }));
 app.use(express.json());
 
-app.get('/api/example', async (req, res) => {
+app.get('/api/example/:board', async (req, res) => {
     try {
-        // const Example = await connect('example', exampleSchema);
-        // const example = await Example.create({ name: 'Hello World' });
-        res.status(200).json({ hello: 'world' });
+        const { board } = req.params;
+
+        const Thread = await connect('thread', threadSchema);
+        // const thread = await Thread.create({ board, ...req.body });
+
+        console.log({ board, ...req.body });
+        res.status(200).json({ board, ...req.body });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 });
 
-// I can POST a thread to a specific message board by passing form data text and delete_password to /api/threads/{board}.(Recomend res.redirect to board page /b/{board}) Saved will be _id, text, created_on(date&time), bumped_on(date&time, starts same as created_on), reported(boolean), delete_password, & replies(array).
-//
-// POST /api/threads/{board}
-//
-//
+app.post('/api/threads/:board', async (req, res) => {
+    try {
+        const { board } = req.params;
 
-// I can POST a reply to a thead on a specific board by passing form data text, delete_password, & thread_id to /api/replies/{board} and it will also update the bumped_on date to the comments date.(Recomend res.redirect to thread page /b/{board}/{thread_id}) In the thread's 'replies' array will be saved _id, text, created_on, delete_password, & reported.
+        const Thread = await connect('thread', threadSchema);
+        const thread = await Thread.create({ board, ...req.body });
 
-// I can GET an array of the most recent 10 bumped threads on the board with only the most recent 3 replies from /api/threads/{board}. The reported and delete_passwords fields will not be sent.
+        res.status(200).json(thread);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
 
-// I can GET an entire thread with all it's replies from /api/replies/{board}?thread_id={thread_id}. Also hiding the same fields.
+app.post('/api/replies/:board', async (req, res) => {
+    try {
+        const { board } = req.params;
+        const { thread_id, ...body } = req.body;
 
-// I can delete a thread completely if I send a DELETE request to /api/threads/{board} and pass along the thread_id & delete_password. (Text response will be 'incorrect password' or 'success')
+        const Thread = await connect('thread', threadSchema);
+        const thread = await Thread.findOneAndUpdate(
+            { _id: req.body.thread_id, board },
+            {
+                $push: {
+                    replies: {
+                        $each: [body],
+                        $sort: { created_on: -1 },
+                    },
+                },
+            },
+            { new: true }
+        );
+        res.status(200).json(thread);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
 
-// I can delete a post(just changing the text to '[deleted]') if I send a DELETE request to /api/replies/{board} and pass along the thread_id, reply_id, & delete_password. (Text response will be 'incorrect password' or 'success')
+/*
+GET /api/threads/{board}
+* return:
+most recent 10 bumped threads with most recent 3 replies from
+- omit:
+reported
+delete_password
+*/
+app.get('/api/threads/:board', async (req, res) => {
+    try {
+        const { board } = req.params;
 
-// I can report a thread and change it's reported value to true by sending a PUT request to /api/threads/{board} and pass along the thread_id. (Text response will be 'success')
+        const Thread = await connect('thread', threadSchema);
 
-// I can report a reply and change it's reported value to true by sending a PUT request to /api/replies/{board} and pass along the thread_id & reply_id. (Text response will be 'success')
+        // aggreate?
+        const threads = await Thread.find(
+            { board },
+            '-reported -delete_password -replies.reported -replies.delete_password'
+        ).sort('-bumped_on');
+
+        // console.log({board, ...req.body})
+        res.status(200).json(threads);
+
+        // console.log({board, ...req.body})
+        // res.status(200).json({board, ...req.body});
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+/*
+GET /api/replies/{board}?thread_id={thread_id}
+* return entire thread
+- omit:
+reported
+delete_password
+*/
+
+/*
+DELETE /api/threads/{board}
+* form data:
+thread_id
+delete_password
+* return:
+'incorrect password' or 'success'
+*/
+
+/*
+DELETE /api/replies/{board}
+* form data:
+thread_id
+reply_id
+delete_password
+* return:
+'incorrect password' or 'success'
+(just changing the text to '[deleted]')
+*/
+
+/*
+PUT /api/threads/{board}
+* form data:
+thread_id
+* change:
+reported -> true
+* response:
+'success'
+*/
+
+/*
+PUT /api/replies/{board}
+* form dats:
+thread_id
+reply_id
+* change:
+reported -> true
+* response:
+'success'
+*/
 
 const port = 4000;
 app.listen(port, () => {
