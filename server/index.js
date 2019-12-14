@@ -27,6 +27,7 @@ app.get('/api/example/:board', async (req, res) => {
     }
 });
 
+// POST new thread
 app.post('/api/threads/:board', async (req, res) => {
     try {
         const { board } = req.params;
@@ -40,6 +41,7 @@ app.post('/api/threads/:board', async (req, res) => {
     }
 });
 
+// POST new reply
 app.post('/api/replies/:board', async (req, res) => {
     try {
         const { board } = req.params;
@@ -64,52 +66,82 @@ app.post('/api/replies/:board', async (req, res) => {
     }
 });
 
-/*
-GET /api/threads/{board}
-* return:
-most recent 10 bumped threads with most recent 3 replies from
-- omit:
-reported
-delete_password
-*/
+// GET 10 latest threads (each with 3 latest replies)
 app.get('/api/threads/:board', async (req, res) => {
     try {
         const { board } = req.params;
 
         const Thread = await connect('thread', threadSchema);
-
-        // aggreate?
         const threads = await Thread.find(
             { board },
-            '-reported -delete_password -replies.reported -replies.delete_password'
-        ).sort('-bumped_on');
+            {
+                reported: false,
+                delete_password: false,
+                'replies.reported': false,
+                'replies.delete_password': false,
+                replies: {
+                    $slice: 3,
+                },
+            }
+        )
+            .sort('-bumped_on')
+            .limit(10);
 
-        // console.log({board, ...req.body})
         res.status(200).json(threads);
-
-        // console.log({board, ...req.body})
-        // res.status(200).json({board, ...req.body});
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 });
 
-/*
-GET /api/replies/{board}?thread_id={thread_id}
-* return entire thread
-- omit:
-reported
-delete_password
-*/
+// GET an entire thread
+app.get('/api/replies/:board', async (req, res) => {
+    try {
+        const { board } = req.params;
+        const { thread_id } = req.query;
 
-/*
-DELETE /api/threads/{board}
-* form data:
-thread_id
-delete_password
-* return:
-'incorrect password' or 'success'
-*/
+        const Thread = await connect('thread', threadSchema);
+
+        const threads = await Thread.findOne(
+            { _id: thread_id, board },
+            {
+                reported: false,
+                delete_password: false,
+                'replies.reported': false,
+                'replies.delete_password': false,
+            }
+        );
+
+        res.status(200).json(threads);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// DELETE a thread
+app.delete('/api/threads/:board', async (req, res) => {
+    try {
+        const { board } = req.params;
+
+        const Thread = await connect('thread', threadSchema);
+        const thread = await Thread.findOne({
+            board,
+            _id: req.body.thread_id,
+        });
+
+        if (!thread) {
+            return res.status(200).json('not found');
+        }
+        if (thread.delete_password !== req.body.delete_password) {
+            return res.status(200).json('incorrect password');
+        }
+
+        await Thread.deleteOne({ _id: req.body.thread_id });
+
+        res.status(200).json('success');
+    } catch (error) {
+        res.status(200).json('not found');
+    }
+});
 
 /*
 DELETE /api/replies/{board}
@@ -121,6 +153,41 @@ delete_password
 'incorrect password' or 'success'
 (just changing the text to '[deleted]')
 */
+app.delete('/api/replies/:board', async (req, res) => {
+    try {
+        const { board } = req.params;
+
+        const Thread = await connect('thread', threadSchema);
+        const thread = await Thread.findOne({
+            board,
+            _id: req.body.thread_id,
+        });
+
+        if (!thread) {
+            return res.status(200).json('not found');
+        }
+
+        console.log(
+            thread.replies.filter(
+                t =>
+                    t.delete_password === req.body.delete_password &&
+                    t._id === req.body.reply_id
+            )
+        );
+
+        res.status(200).json('test');
+
+        // if (thread.delete_password !== req.body.delete_password) {
+        //     return res.status(200).json('incorrect password');
+        // }
+
+        // await Thread.deleteOne({ _id: req.body.thread_id });
+
+        // res.status(200).json('success');
+    } catch (error) {
+        res.status(200).json('not found');
+    }
+});
 
 /*
 PUT /api/threads/{board}
