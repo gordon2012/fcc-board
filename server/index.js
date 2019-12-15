@@ -176,26 +176,60 @@ app.delete('/api/replies/:board', async (req, res) => {
     }
 });
 
-/*
-PUT /api/threads/{board}
-* form data:
-thread_id
-* change:
-reported -> true
-* response:
-'success'
-*/
+// PUT report thread
+app.put('/api/threads/:board', async (req, res) => {
+    try {
+        const { board } = req.params;
 
-/*
-PUT /api/replies/{board}
-* form dats:
-thread_id
-reply_id
-* change:
-reported -> true
-* response:
-'success'
-*/
+        const Thread = await connect('thread', threadSchema);
+        const thread = await Thread.findOneAndUpdate(
+            {
+                board,
+                _id: req.body.thread_id,
+            },
+            {
+                reported: true,
+            }
+        );
+
+        if (!thread) {
+            return res.status(200).json('not found');
+        }
+
+        res.status(200).json('success');
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// PUT report reply
+app.put('/api/replies/:board', async (req, res) => {
+    try {
+        const { board } = req.params;
+
+        const Thread = await connect('thread', threadSchema);
+        const thread = await Thread.findOne({
+            board,
+            _id: req.body.thread_id,
+        });
+
+        if (!thread) {
+            return res.status(200).json('not found');
+        }
+
+        for (let i = 0; i < thread.replies.length; i++) {
+            const reply = thread.replies[i];
+            if (reply._id.toString() === req.body.reply_id) {
+                reply.reported = true;
+                await thread.save();
+                return res.status(200).json('success');
+            }
+        }
+        res.status(200).json('not found');
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
 
 const port = 4000;
 app.listen(port, () => {
