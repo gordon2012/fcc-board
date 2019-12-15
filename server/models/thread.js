@@ -11,7 +11,7 @@ const threadSchema = {
         type: Boolean,
         default: false,
     },
-    delete_password: {
+    deletepassword_: {
         type: String,
         required: true,
     },
@@ -21,11 +21,11 @@ const threadSchema = {
                 type: String,
                 required: true,
             },
-            created_on: {
+            createdon_: {
                 type: Date,
                 default: Date.now,
             },
-            delete_password: {
+            deletepassword_: {
                 type: String,
                 required: true,
             },

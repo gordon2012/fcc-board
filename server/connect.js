@@ -23,8 +23,8 @@ const connect = async (model, schema) => {
         model,
         new mongoose.Schema(schema, {
             timestamps: {
-                createdAt: 'created_on',
-                updatedAt: 'bumped_on',
+                createdAt: 'createdon_',
+                updatedAt: 'bumpedon_',
             },
             toJSON: {
                 transform: omitVersion,

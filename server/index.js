@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 
 const connect = require('./connect');
-const exampleSchema = require('./models/example');
 const threadSchema = require('./models/thread');
 
 const app = express();
@@ -12,20 +11,6 @@ const origin =
         : 'https://board.gordondoskas.com';
 app.use(cors({ origin }));
 app.use(express.json());
-
-app.get('/api/example/:board', async (req, res) => {
-    try {
-        const { board } = req.params;
-
-        const Thread = await connect('thread', threadSchema);
-        // const thread = await Thread.create({ board, ...req.body });
-
-        console.log({ board, ...req.body });
-        res.status(200).json({ board, ...req.body });
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
-});
 
 // POST new thread
 app.post('/api/threads/:board', async (req, res) => {
@@ -45,16 +30,16 @@ app.post('/api/threads/:board', async (req, res) => {
 app.post('/api/replies/:board', async (req, res) => {
     try {
         const { board } = req.params;
-        const { thread_id, ...body } = req.body;
+        const { threadid_, ...body } = req.body;
 
         const Thread = await connect('thread', threadSchema);
         const thread = await Thread.findOneAndUpdate(
-            { _id: req.body.thread_id, board },
+            { _id: req.body.threadid_, board },
             {
                 $push: {
                     replies: {
                         $each: [body],
-                        $sort: { created_on: -1 },
+                        $sort: { createdon_: -1 },
                     },
                 },
             },
@@ -76,15 +61,15 @@ app.get('/api/threads/:board', async (req, res) => {
             { board },
             {
                 reported: false,
-                delete_password: false,
+                deletepassword_: false,
                 'replies.reported': false,
-                'replies.delete_password': false,
+                'replies.deletepassword_': false,
                 replies: {
                     $slice: 3,
                 },
             }
         )
-            .sort('-bumped_on')
+            .sort('-bumpedon_')
             .limit(10);
 
         res.status(200).json(threads);
@@ -97,21 +82,21 @@ app.get('/api/threads/:board', async (req, res) => {
 app.get('/api/replies/:board', async (req, res) => {
     try {
         const { board } = req.params;
-        const { thread_id } = req.query;
+        const { threadid_ } = req.query;
 
         const Thread = await connect('thread', threadSchema);
 
-        const threads = await Thread.findOne(
-            { _id: thread_id, board },
+        const thread = await Thread.findOne(
+            { _id: threadid_, board },
             {
                 reported: false,
-                delete_password: false,
+                deletepassword_: false,
                 'replies.reported': false,
-                'replies.delete_password': false,
+                'replies.deletepassword_': false,
             }
         );
 
-        res.status(200).json(threads);
+        res.status(200).json(thread);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
@@ -125,17 +110,17 @@ app.delete('/api/threads/:board', async (req, res) => {
         const Thread = await connect('thread', threadSchema);
         const thread = await Thread.findOne({
             board,
-            _id: req.body.thread_id,
+            _id: req.body.threadid_,
         });
 
         if (!thread) {
             return res.status(200).json('not found');
         }
-        if (thread.delete_password !== req.body.delete_password) {
+        if (thread.deletepassword_ !== req.body.deletepassword_) {
             return res.status(200).json('incorrect password');
         }
 
-        await Thread.deleteOne({ _id: req.body.thread_id });
+        await Thread.deleteOne({ _id: req.body.threadid_ });
 
         res.status(200).json('success');
     } catch (error) {
@@ -151,7 +136,7 @@ app.delete('/api/replies/:board', async (req, res) => {
         const Thread = await connect('thread', threadSchema);
         const thread = await Thread.findOne({
             board,
-            _id: req.body.thread_id,
+            _id: req.body.threadid_,
         });
 
         if (!thread) {
@@ -160,8 +145,8 @@ app.delete('/api/replies/:board', async (req, res) => {
 
         for (let i = 0; i < thread.replies.length; i++) {
             const reply = thread.replies[i];
-            if (reply._id.toString() === req.body.reply_id) {
-                if (reply.delete_password === req.body.delete_password) {
+            if (reply._id.toString() === req.body.replyid_) {
+                if (reply.deletepassword_ === req.body.deletepassword_) {
                     reply.text = '[deleted]';
                     await thread.save();
                     return res.status(200).json('success');
@@ -185,7 +170,7 @@ app.put('/api/threads/:board', async (req, res) => {
         const thread = await Thread.findOneAndUpdate(
             {
                 board,
-                _id: req.body.thread_id,
+                _id: req.body.threadid_,
             },
             {
                 reported: true,
@@ -210,7 +195,7 @@ app.put('/api/replies/:board', async (req, res) => {
         const Thread = await connect('thread', threadSchema);
         const thread = await Thread.findOne({
             board,
-            _id: req.body.thread_id,
+            _id: req.body.threadid_,
         });
 
         if (!thread) {
@@ -219,7 +204,7 @@ app.put('/api/replies/:board', async (req, res) => {
 
         for (let i = 0; i < thread.replies.length; i++) {
             const reply = thread.replies[i];
-            if (reply._id.toString() === req.body.reply_id) {
+            if (reply._id.toString() === req.body.replyid_) {
                 reply.reported = true;
                 await thread.save();
                 return res.status(200).json('success');
