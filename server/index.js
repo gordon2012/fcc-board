@@ -143,16 +143,7 @@ app.delete('/api/threads/:board', async (req, res) => {
     }
 });
 
-/*
-DELETE /api/replies/{board}
-* form data:
-thread_id
-reply_id
-delete_password
-* return:
-'incorrect password' or 'success'
-(just changing the text to '[deleted]')
-*/
+// DELETE a reply
 app.delete('/api/replies/:board', async (req, res) => {
     try {
         const { board } = req.params;
@@ -167,23 +158,19 @@ app.delete('/api/replies/:board', async (req, res) => {
             return res.status(200).json('not found');
         }
 
-        console.log(
-            thread.replies.filter(
-                t =>
-                    t.delete_password === req.body.delete_password &&
-                    t._id === req.body.reply_id
-            )
-        );
-
-        res.status(200).json('test');
-
-        // if (thread.delete_password !== req.body.delete_password) {
-        //     return res.status(200).json('incorrect password');
-        // }
-
-        // await Thread.deleteOne({ _id: req.body.thread_id });
-
-        // res.status(200).json('success');
+        for (let i = 0; i < thread.replies.length; i++) {
+            const reply = thread.replies[i];
+            if (reply._id.toString() === req.body.reply_id) {
+                if (reply.delete_password === req.body.delete_password) {
+                    reply.text = '[deleted]';
+                    await thread.save();
+                    return res.status(200).json('success');
+                } else {
+                    return res.status(200).json('incorrect password');
+                }
+            }
+        }
+        res.status(200).json('not found');
     } catch (error) {
         res.status(200).json('not found');
     }
