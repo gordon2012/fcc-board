@@ -30,6 +30,8 @@ const Title = styled.h1`
 
 const List = styled.ul``;
 
+const boards = ['general', 'advanced', 'specialized'];
+
 const App = () => {
     const [responses, setResponses] = React.useState([]);
 
@@ -46,6 +48,23 @@ const App = () => {
         setResponses(prevState => [data, ...prevState]);
         setResults(prevState => ({ ...prevState, getExample: data }));
     };
+
+    const [previews, setPreviews] = React.useState({});
+    const [threads, setThreads] = React.useState({});
+
+    React.useEffect(() => {
+        (async () => {
+            const previews = {};
+            await Promise.all(
+                boards.map(async board => {
+                    const res = await fetch(`${BASE_URL}/api/threads/${board}`);
+                    const data = await res.json();
+                    previews[board] = data;
+                })
+            );
+            setPreviews(previews);
+        })();
+    }, []);
 
     return (
         <>
@@ -78,7 +97,85 @@ const App = () => {
 
                 <Title as="h2">Front-End</Title>
 
+                {/* get board names from api */}
+                {/* for now use 'general' */}
+                {/* {['general'].map(board => (
+                    <Card key={board}>
+                        <h3>{board[0].toUpperCase() + board.substring(1)}</h3>
+                    </Card>
+                ))} */}
+
+                {boards.map(board => (
+                    <Card key={board}>
+                        <Title>
+                            {board[0].toUpperCase() + board.substring(1)}
+                        </Title>
+
+                        {previews[board] &&
+                            previews[board].map(
+                                ({ _id, text, createdon_, replies }) => (
+                                    <Card key={_id} variant="light">
+                                        {text}
+                                        <br />
+                                        <br />
+                                        <Card>
+                                            <ul>
+                                                {replies.map(
+                                                    ({ _id, text }) => (
+                                                        <li key={_id}>
+                                                            {text}{' '}
+                                                            <small>
+                                                                on {createdon_}
+                                                            </small>
+                                                        </li>
+                                                    )
+                                                )}
+                                            </ul>
+                                        </Card>
+                                    </Card>
+                                )
+                            )}
+
+                        <Button>New Thread</Button>
+                    </Card>
+                ))}
+
+                {/* <Card>
+                    <h3>General</h3>
+
+                    <Card variant="light">
+                        Thread
+                        <br />
+                        <br />
+                        <Card>
+                            <p>Replies:</p>
+                            <Card variant="light">Reply</Card>
+                            <Card variant="light">Reply</Card>
+                            <Button>Add Reply</Button>
+                        </Card>
+                    </Card>
+
+                    <Card variant="light">
+                        <p>Another Thread</p>
+                        <Card>
+                            <p>Replies:</p>
+                            <Card variant="light">Another Reply</Card>
+                            <Button>Add Reply</Button>
+                        </Card>
+                    </Card>
+                    <Form>
+                        <Input type="text" name="text"></Input>
+                        <Button>New Thread</Button>
+                    </Form>
+                </Card> */}
+
                 <Card>
+                    <h3>Debug</h3>
+
+                    <Code box>{previews}</Code>
+                </Card>
+
+                {/* <Card>
                     <h3>Input</h3>
 
                     <Form debug onSubmit={getExample}>
@@ -95,7 +192,7 @@ const App = () => {
                             </Button>
                         </>
                     )}
-                </Card>
+                </Card> */}
 
                 {responses.length > 0 && (
                     <>

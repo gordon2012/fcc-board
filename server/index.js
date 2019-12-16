@@ -53,6 +53,7 @@ app.post('/api/replies/:board', async (req, res) => {
 
 // GET 10 latest threads (each with 3 latest replies)
 app.get('/api/threads/:board', async (req, res) => {
+    console.log(`GET /api/threads/:board`);
     try {
         const { board } = req.params;
 
