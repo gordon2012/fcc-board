@@ -136,6 +136,8 @@ const App = () => {
                                 )
                             )}
 
+                        <Form></Form>
+
                         <Button>New Thread</Button>
                     </Card>
                 ))}
