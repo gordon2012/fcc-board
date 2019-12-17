@@ -66,6 +66,12 @@ const App = () => {
         })();
     }, []);
 
+    const postThread = input => {
+        // console.log({ board, ...input });
+
+        console.log(input);
+    };
+
     return (
         <>
             <GlobalStyle />
@@ -136,9 +142,11 @@ const App = () => {
                                 )
                             )}
 
-                        <Form></Form>
-
-                        <Button>New Thread</Button>
+                        <Form onSubmit={postThread}>
+                            <Input name="board" type="hidden" value={board} />
+                            <Input name="text" title="Message" />
+                            <Button>New Thread</Button>
+                        </Form>
                     </Card>
                 ))}
 
