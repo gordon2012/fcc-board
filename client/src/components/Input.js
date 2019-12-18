@@ -101,15 +101,6 @@ const Input = ({
                     required={required}
                 />
             )}
-
-            {type === 'hidden' && (
-                <input
-                    type="hidden"
-                    id={`${name}-${id}`}
-                    name={name}
-                    value={value || ''}
-                />
-            )}
         </StyledInput>
     );
 };
