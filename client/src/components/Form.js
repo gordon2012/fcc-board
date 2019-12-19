@@ -5,7 +5,7 @@ import Code from './Code';
 
 const StyledForm = styled.form``;
 
-const Form = ({ blank, children, debug, onSubmit, ...restProps }) => {
+const Form = ({ blank, children, debug, onSubmit, data, ...restProps }) => {
     let elements = React.Children.toArray(children);
 
     const [input, setRawInput] = React.useState(
@@ -49,7 +49,7 @@ const Form = ({ blank, children, debug, onSubmit, ...restProps }) => {
 
     const handleSubmit = event => {
         event.preventDefault();
-        onSubmit(input);
+        onSubmit({ ...data, ...input });
         setRawInput(
             blank
                 ? elements

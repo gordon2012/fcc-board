@@ -66,6 +66,7 @@ const App = () => {
         })();
     }, []);
 
+    // todo: make like reply
     const postThread = boards.reduce(
         (a, board) => ({
             ...a,
@@ -88,6 +89,36 @@ const App = () => {
         }),
         {}
     );
+
+    const postReply = async ({ board, threadid_, ...input }) => {
+        // console.log(input);
+
+        // console.log(body);
+
+        const res = await fetch(`${BASE_URL}/api/replies/${board}`, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ threadid_, ...input }),
+        });
+        const data = await res.json();
+
+        // console.log(data);
+
+        setPreviews(prevState => {
+            // const thread = prevState[board].filter(t => t._id)[0];
+            // const replies = [data, prevState[board].replies].slice(0, 3);
+
+            // console.log({
+            //     ...prevState,
+            //     [board]: { ...prevState[board], replies },
+            // });
+
+            return prevState;
+        });
+    };
 
     return (
         <>
@@ -186,6 +217,24 @@ const App = () => {
                                                 ) : (
                                                     <>No Replies</>
                                                 )}
+                                                <h4>Add Reply</h4>
+                                                <Form
+                                                    onSubmit={postReply}
+                                                    data={{
+                                                        board,
+                                                        threadid_: _id,
+                                                    }}
+                                                >
+                                                    <Input
+                                                        name="text"
+                                                        title="Text"
+                                                    />
+                                                    <Input
+                                                        name="deletepassword_"
+                                                        title="Delete Password"
+                                                    />
+                                                    <Button>Submit</Button>
+                                                </Form>
                                             </Card>
                                         )
                                     )}
