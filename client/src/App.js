@@ -9,6 +9,8 @@ import Form from './components/Form';
 import Input from './components/Input';
 import Button from './components/Button';
 
+import Replies from './components/Replies';
+
 const GlobalStyle = createGlobalStyle`
     @import url('https://fonts.googleapis.com/css?family=Ubuntu+Mono|Ubuntu:400,700&display=swap');
 
@@ -50,7 +52,7 @@ const App = () => {
     };
 
     const [previews, setPreviews] = React.useState({});
-    const [threads, setThreads] = React.useState({});
+    const [deleted, setDeleted] = React.useState({});
 
     React.useEffect(() => {
         (async () => {
@@ -97,6 +99,33 @@ const App = () => {
             body: JSON.stringify({ threadid_, ...input }),
         });
         getPreview(board);
+    };
+
+    const deleteThread = async ({ board, threadid_, ...input }) => {
+        const res = await fetch(`${BASE_URL}/api/threads/${board}`, {
+            method: 'DELETE',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ threadid_, ...input }),
+        });
+        const data = await res.json();
+
+        setDeleted(prevState => ({
+            ...prevState,
+            [threadid_]: { success: data === 'success' },
+        }));
+
+        setTimeout(() => {
+            setDeleted(prevState => ({
+                ...prevState,
+                [threadid_]: { success: false, done: true },
+            }));
+            if (data === 'success') {
+                getPreview(board);
+            }
+        }, 2000);
     };
 
     return (
@@ -163,62 +192,71 @@ const App = () => {
                                             replies,
                                         }) => (
                                             <Card key={_id} variant="light">
-                                                {text}
-                                                <br />
-                                                <br />
-
-                                                {replies &&
-                                                replies.length > 0 ? (
-                                                    <>
-                                                        Replies:
-                                                        <Card>
-                                                            <ul>
-                                                                {replies.map(
-                                                                    ({
-                                                                        _id,
-                                                                        text,
-                                                                    }) => (
-                                                                        <li
-                                                                            key={
-                                                                                _id
-                                                                            }
-                                                                        >
-                                                                            {
-                                                                                text
-                                                                            }{' '}
-                                                                            <small>
-                                                                                on{' '}
-                                                                                {
-                                                                                    createdon_
-                                                                                }
-                                                                            </small>
-                                                                        </li>
-                                                                    )
-                                                                )}
-                                                            </ul>
-                                                        </Card>
-                                                    </>
+                                                {deleted[_id] &&
+                                                deleted[_id].success ? (
+                                                    <>Deleted...</>
                                                 ) : (
-                                                    <>No Replies</>
+                                                    <>
+                                                        {text}
+                                                        <br />
+                                                        <br />
+
+                                                        <Replies
+                                                            board={board}
+                                                            threadid_={_id}
+                                                            replies={replies}
+                                                        />
+                                                        <h4>Add Reply</h4>
+                                                        <Form
+                                                            onSubmit={postReply}
+                                                            data={{
+                                                                board,
+                                                                threadid_: _id,
+                                                            }}
+                                                        >
+                                                            <Input
+                                                                name="text"
+                                                                title="Text"
+                                                            />
+                                                            <Input
+                                                                name="deletepassword_"
+                                                                title="Delete Password"
+                                                            />
+                                                            <Button>
+                                                                Submit
+                                                            </Button>
+                                                        </Form>
+
+                                                        <h4>Delete Thread</h4>
+                                                        <Form
+                                                            onSubmit={
+                                                                deleteThread
+                                                            }
+                                                            data={{
+                                                                board,
+                                                                threadid_: _id,
+                                                            }}
+                                                        >
+                                                            <Input
+                                                                name="deletepassword_"
+                                                                title="Delete Password"
+                                                            />
+                                                            <Button>
+                                                                Submit
+                                                            </Button>
+                                                        </Form>
+                                                        {deleted[_id] &&
+                                                            !deleted[_id]
+                                                                .success &&
+                                                            !deleted[_id]
+                                                                .done && (
+                                                                <>
+                                                                    Incorrect
+                                                                    Password
+                                                                </>
+                                                            )}
+                                                    </>
                                                 )}
-                                                <h4>Add Reply</h4>
-                                                <Form
-                                                    onSubmit={postReply}
-                                                    data={{
-                                                        board,
-                                                        threadid_: _id,
-                                                    }}
-                                                >
-                                                    <Input
-                                                        name="text"
-                                                        title="Text"
-                                                    />
-                                                    <Input
-                                                        name="deletepassword_"
-                                                        title="Delete Password"
-                                                    />
-                                                    <Button>Submit</Button>
-                                                </Form>
                                             </Card>
                                         )
                                     )}
