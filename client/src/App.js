@@ -66,36 +66,29 @@ const App = () => {
         })();
     }, []);
 
-    // todo: make like reply
-    const postThread = boards.reduce(
-        (a, board) => ({
-            ...a,
-            [board]: async input => {
-                const res = await fetch(`${BASE_URL}/api/threads/${board}`, {
-                    method: 'POST',
-                    headers: {
-                        Accept: 'application/json',
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(input),
-                });
-                const data = await res.json();
+    const getPreview = async board => {
+        const res = await fetch(`${BASE_URL}/api/threads/${board}`);
+        const data = await res.json();
+        setPreviews(prevState => ({
+            ...prevState,
+            [board]: data,
+        }));
+    };
 
-                setPreviews(prevState => ({
-                    ...prevState,
-                    [board]: [data, ...prevState[board]].slice(0, 10),
-                }));
+    const postThread = async ({ board, ...input }) => {
+        await fetch(`${BASE_URL}/api/threads/${board}`, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
             },
-        }),
-        {}
-    );
+            body: JSON.stringify(input),
+        });
+        getPreview(board);
+    };
 
     const postReply = async ({ board, threadid_, ...input }) => {
-        // console.log(input);
-
-        // console.log(body);
-
-        const res = await fetch(`${BASE_URL}/api/replies/${board}`, {
+        await fetch(`${BASE_URL}/api/replies/${board}`, {
             method: 'POST',
             headers: {
                 Accept: 'application/json',
@@ -103,21 +96,7 @@ const App = () => {
             },
             body: JSON.stringify({ threadid_, ...input }),
         });
-        const data = await res.json();
-
-        // console.log(data);
-
-        setPreviews(prevState => {
-            // const thread = prevState[board].filter(t => t._id)[0];
-            // const replies = [data, prevState[board].replies].slice(0, 3);
-
-            // console.log({
-            //     ...prevState,
-            //     [board]: { ...prevState[board], replies },
-            // });
-
-            return prevState;
-        });
+        getPreview(board);
     };
 
     return (
@@ -158,7 +137,12 @@ const App = () => {
                         </Title>
 
                         <h4>New Thread</h4>
-                        <Form onSubmit={postThread[board]}>
+                        <Form
+                            onSubmit={postThread}
+                            data={{
+                                board,
+                            }}
+                        >
                             <Input name="text" title="Text" />
                             <Input
                                 name="deletepassword_"
