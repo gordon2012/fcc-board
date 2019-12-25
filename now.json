@@ -1,6 +1,9 @@
 {
     "name": "fcc-board",
     "version": 2,
+    "env": {
+        "ATLAS_URI": "@board-atlas-uri"
+    },
     "builds": [
         { "src": "server/index.js", "use": "@now/node-server" },
         {
@@ -11,9 +14,14 @@
     ],
     "routes": [
         {
-            "src": "/api/example",
+            "src": "/api/threads/(.*)",
             "dest": "/server/index.js",
-            "methods": ["GET"]
+            "methods": ["POST", "GET", "DELETE", "PUT"]
+        },
+        {
+            "src": "/api/replies/(.*)",
+            "dest": "/server/index.js",
+            "methods": ["POST", "GET", "DELETE", "PUT"]
         },
         {
             "src": "/",
