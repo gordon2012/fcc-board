@@ -200,11 +200,15 @@ const App = () => {
                                                         {text}
                                                         <br />
                                                         <br />
-
                                                         <Replies
                                                             board={board}
                                                             threadid_={_id}
                                                             replies={replies}
+                                                            reload={() => {
+                                                                getPreview(
+                                                                    board
+                                                                );
+                                                            }}
                                                         />
                                                         <h4>Add Reply</h4>
                                                         <Form

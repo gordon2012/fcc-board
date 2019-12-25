@@ -4,6 +4,8 @@ import { BASE_URL } from '../index';
 
 import Card from './Card';
 import Button from './Button';
+import Form from './Form';
+import Input from './Input';
 
 const Slider = styled(Button)`
     width: initial;
@@ -14,11 +16,33 @@ const Slider = styled(Button)`
     border: none;
 `;
 
-const Replies = ({ board, threadid_, replies }) => {
+const List = styled.ul`
+    padding: 0;
+    li {
+        border: 1px solid white;
+        list-style: none;
+        padding: 0.5rem;
+
+        margin-bottom: 0.5rem;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+`;
+
+const Title = styled.h4`
+    margin-top: 0;
+    padding-bottom: 1rem;
+`;
+
+const Replies = ({ board, threadid_, replies, reload }) => {
     const [open, setOpen] = React.useState(false);
     const [loaded, setLoaded] = React.useState(false);
 
     const [allReplies, setAllReplies] = React.useState(null);
+
+    const [incorrect, setIncorrect] = React.useState({});
 
     const handleOpen = async () => {
         if (open) {
@@ -40,23 +64,90 @@ const Replies = ({ board, threadid_, replies }) => {
         }
     };
 
+    const deleteReply = async ({ replyid_, ...input }) => {
+        console.log(input);
+
+        const res = await fetch(`${BASE_URL}/api/replies/${board}`, {
+            method: 'DELETE',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ threadid_, replyid_, ...input }),
+        });
+        const data = await res.json();
+
+        if (data === 'success') {
+            const repliesRes = await fetch(
+                `${BASE_URL}/api/replies/${board}?threadid_=${threadid_}`
+            );
+            const repliesData = await repliesRes.json();
+            setAllReplies(repliesData.replies);
+        } else {
+            setIncorrect(prevState => ({
+                ...prevState,
+                [replyid_]: true,
+            }));
+            setTimeout(() => {
+                setIncorrect(prevState => ({
+                    ...prevState,
+                    [replyid_]: false,
+                }));
+            }, 2000);
+        }
+        reload();
+
+        console.log(data);
+    };
+
     return (
         <>
             {replies && replies.length > 0 ? (
                 <>
-                    Replies:
                     <Card>
-                        <Slider onClick={handleOpen}>
-                            {open ? '🔺' : '🔻'}
-                        </Slider>
-                        <ul>
+                        <Title>
+                            Replies:
+                            <Slider onClick={handleOpen}>
+                                {open ? '🔺' : '🔻'}
+                            </Slider>
+                        </Title>
+                        <List>
                             {open && allReplies ? (
                                 <>
                                     {allReplies.map(
                                         ({ _id, text, createdon_ }) => (
                                             <li key={_id}>
-                                                {text}{' '}
+                                                <p>{text}</p>
                                                 <small>on {createdon_}</small>
+                                                <br />
+                                                <br />
+                                                {text !== '[deleted]' && (
+                                                    <>
+                                                        <Form
+                                                            onSubmit={
+                                                                deleteReply
+                                                            }
+                                                            data={{
+                                                                replyid_: _id,
+                                                            }}
+                                                        >
+                                                            <Input
+                                                                required
+                                                                name="deletepassword_"
+                                                                title="Password"
+                                                            />
+                                                            <Button>
+                                                                Delete
+                                                            </Button>
+                                                        </Form>
+                                                        {incorrect[_id] && (
+                                                            <h4>
+                                                                Incorrect
+                                                                Password
+                                                            </h4>
+                                                        )}
+                                                    </>
+                                                )}
                                             </li>
                                         )
                                     )}
@@ -71,9 +162,10 @@ const Replies = ({ board, threadid_, replies }) => {
                                             </li>
                                         )
                                     )}
+                                    {open && <h4>Loading...</h4>}
                                 </>
                             )}
-                        </ul>
+                        </List>
                     </Card>
                 </>
             ) : (
