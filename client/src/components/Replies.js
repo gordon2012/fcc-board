@@ -39,10 +39,9 @@ const Title = styled.h4`
 const Replies = ({ board, threadid_, replies, reload }) => {
     const [open, setOpen] = React.useState(false);
     const [loaded, setLoaded] = React.useState(false);
-
     const [allReplies, setAllReplies] = React.useState(null);
-
     const [incorrect, setIncorrect] = React.useState({});
+    const [reported, setReported] = React.useState({});
 
     const handleOpen = async () => {
         if (open) {
@@ -65,8 +64,6 @@ const Replies = ({ board, threadid_, replies, reload }) => {
     };
 
     const deleteReply = async ({ replyid_, ...input }) => {
-        console.log(input);
-
         const res = await fetch(`${BASE_URL}/api/replies/${board}`, {
             method: 'DELETE',
             headers: {
@@ -96,8 +93,25 @@ const Replies = ({ board, threadid_, replies, reload }) => {
             }, 2000);
         }
         reload();
+    };
 
-        console.log(data);
+    const reportReply = async ({ replyid_ }) => {
+        const res = await fetch(`${BASE_URL}/api/replies/${board}`, {
+            method: 'PUT',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ threadid_, replyid_ }),
+        });
+        const data = await res.json();
+
+        if (data === 'success') {
+            setReported(prevState => ({
+                ...prevState,
+                [replyid_]: true,
+            }));
+        }
     };
 
     return (
@@ -145,6 +159,25 @@ const Replies = ({ board, threadid_, replies, reload }) => {
                                                                 Incorrect
                                                                 Password
                                                             </h4>
+                                                        )}
+
+                                                        {reported[_id] ? (
+                                                            <h4>
+                                                                Reply Reported
+                                                            </h4>
+                                                        ) : (
+                                                            <Form
+                                                                onSubmit={
+                                                                    reportReply
+                                                                }
+                                                                data={{
+                                                                    replyid_: _id,
+                                                                }}
+                                                            >
+                                                                <Button>
+                                                                    Report Reply
+                                                                </Button>
+                                                            </Form>
                                                         )}
                                                     </>
                                                 )}

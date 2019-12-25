@@ -53,6 +53,7 @@ const App = () => {
 
     const [previews, setPreviews] = React.useState({});
     const [deleted, setDeleted] = React.useState({});
+    const [reported, setReported] = React.useState({});
 
     React.useEffect(() => {
         (async () => {
@@ -126,6 +127,25 @@ const App = () => {
                 getPreview(board);
             }
         }, 2000);
+    };
+
+    const reportThread = async ({ board, threadid_ }) => {
+        const res = await fetch(`${BASE_URL}/api/threads/${board}`, {
+            method: 'PUT',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ threadid_ }),
+        });
+        const data = await res.json();
+
+        if (data === 'success') {
+            setReported(prevState => ({
+                ...prevState,
+                [threadid_]: true,
+            }));
+        }
     };
 
     return (
@@ -259,6 +279,27 @@ const App = () => {
                                                                     Password
                                                                 </>
                                                             )}
+
+                                                        {reported[_id] ? (
+                                                            <h4>
+                                                                Thread Reported
+                                                            </h4>
+                                                        ) : (
+                                                            <Form
+                                                                onSubmit={
+                                                                    reportThread
+                                                                }
+                                                                data={{
+                                                                    board,
+                                                                    threadid_: _id,
+                                                                }}
+                                                            >
+                                                                <Button>
+                                                                    Report
+                                                                    Thread
+                                                                </Button>
+                                                            </Form>
+                                                        )}
                                                     </>
                                                 )}
                                             </Card>
