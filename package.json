@@ -19,5 +19,8 @@
         "start": "concurrently \"yarn run server\" \"yarn run client\"",
         "stage": "now",
         "deploy": "now --prod"
+    },
+    "engines": {
+        "node": "12.x"
     }
 }
